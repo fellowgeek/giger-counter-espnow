@@ -4,10 +4,10 @@ const int led = 2;
 int ledStatus = 0;
 char payload[32];
 unsigned long lastTime = 0;
-unsigned long timerDelay = 1000;
+unsigned long timerDelay = 5000;
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-#define SENSOR_PIN 5
+#define SENSOR_PIN 13
 #define MEASUREMENT_SECS 60
 
 volatile unsigned int newTicks = 0;
@@ -20,32 +20,13 @@ unsigned long tickCountsLogSum = 0;
 unsigned long lastTickLogsUpdateTime = 0;
 unsigned long lastVoltageReadTime = 0;
 
-String xxx;
+String message;
 
 #include <ESP8266WiFi.h>
 #include <espnow.h>
 
 // callback function that will be executed when data is received
 void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
-
-//  memcpy(&payload, incomingData, sizeof(payload));
-//
-//  char macStr[18];
-//  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-//
-//  Serial.print(">");
-//  Serial.print(macStr);
-//  Serial.print(",");
-//  Serial.print(payload);
-//  Serial.println("<");
-//
-//  if (ledStatus == 0) {
-//    digitalWrite(led, HIGH);
-//    ledStatus = 1;
-//  } else {
-//    digitalWrite(led, LOW);
-//    ledStatus = 0;
-//  }
 
 }
 
@@ -68,7 +49,8 @@ void setup() {
   // led off
   digitalWrite(led, LOW);
 
-  pinMode(SENSOR_PIN,INPUT_PULLUP);
+  // sensor pin
+  pinMode(SENSOR_PIN, INPUT);
 
   // serial
   Serial.begin(115200);
@@ -113,18 +95,14 @@ void loop() {
 
 
   if ((millis() - lastTime) > timerDelay) {
+     
+    message = String("PING,RADD,CPM,") + ticksCount;
+    message.toCharArray(payload, message.length() + 1);
     
-    
-    strcpy(payload, "PING,RADD");
-    //esp_now_send(broadcastAddress, (uint8_t *) &payload, sizeof(payload));
+    esp_now_send(broadcastAddress, (uint8_t *) &payload, sizeof(payload));
 
-    xxx = String("CPM,") + ticksCount;
-    Serial.println(xxx);
-
-    Serial.print(" CPM: ");
+    Serial.print("CPM: ");
     Serial.println(ticksCount);
-
-    
     
     lastTime = millis();
   }
@@ -134,13 +112,6 @@ void loop() {
 void updateTicks(unsigned int newValue) {
   ticksCountPerSec += newValue;
   ticksCount += newValue;
-
-#if DEBUG
-  if(newValue > 0) {
-    Serial.print(" CPM: ");
-    Serial.println(ticksCount);
-  }
-#endif
 }
 
 void updateTickLogs() {
